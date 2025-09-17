@@ -1,0 +1,73 @@
+# Tethys Main CI
+name: Test CI
+
+# Run on pushes and pull requests but not tags.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - "*"
+
+env:
+  CONDA_BUILD_PIN_LEVEL: minor
+  DOCKER_UPLOAD_URL: tethysplatform/tethys-core
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  TEST_IMAGE: tethys
+  POSTGRES_DB: tethys_postgis
+  POSTGRES_PASSWORD: please_dont_use_default_passwords
+  POSTGRES_PORT: 5432
+  TETHYS_DB_HOST: 172.17.0.1
+  TETHYS_DB_PORT: 5432
+  TETHYS_DB_USERNAME: tethys_default
+  TETHYS_DB_PASSWORD: please_dont_use_default_passwords
+  TETHYS_DB_SUPERUSER: tethys_super
+  TETHYS_DB_SUPERUSER_PASS: please_dont_use_default_passwords
+
+jobs:
+  test-pypi-build:
+    name: Build distribution 📦
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: Install pypa/build
+      run: >-
+        python3 -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: python3 -m build
+    - name: Store the distribution packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-test-package-distributions
+        path: dist/
+
+  publish-to-testpypi:
+    name: Publish Python 🐍 distribution 📦 to TestPyPI
+    needs:
+    - test-pypi-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-test-package-distributions
+        path: dist/
+    - name: Publish distribution 📦 to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        verbose: true
+        skip-existing: true
+        repository-url: https://test.pypi.org/legacy
