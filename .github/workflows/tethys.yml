@@ -1,5 +1,5 @@
 # Tethys Main CI
-name: Tethys-CI
+name: Test CI
 
 # Run on pushes and pull requests but not tags.
 on:
