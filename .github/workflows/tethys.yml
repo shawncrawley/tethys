@@ -3,6 +3,7 @@ name: Tethys-CI
 
 # Run on pushes and pull requests but not tags.
 on:
+  workflow_dispatch:
   push:
     branches:
     - "*"
